@@ -10,10 +10,15 @@ WHISPER_SAMPLE_RATE=16000
 LISTEN_TIMEOUT=5
 PHRASE_TIME_LIMIT=20
 
+#gpu support 
+device="cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device -> {device}")
+
+
 def load_whisper(model_name="small"):
     print(f"Loading the model -> {model_name} on CPU")
     try:
-        model=whisper.load_model(model_name,device="cpu")
+        model=whisper.load_model(model_name,device=device)
         print("Model Loaded Successfully")
         return model
     except Exception as e:
@@ -65,8 +70,9 @@ def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
                 raw_data=audio_data.get_raw_data(convert_rate=WHISPER_SAMPLE_RATE,convert_width=2)
                 audio_np=np.frombuffer(raw_data,dtype=np.int16)
                 audio_normalised=audio_np.astype(np.float32)/32768.0
-                result=model.transcribe(audio_normalised,fp16=False)
-
+                audio_tensor=torch.from_numpy(audio_normalised).to(device)
+                result=model.transcribe(audio_tensor,fp16=False)
+                    
                 text=result["text"].strip()
                 if text and len(text)>1:
                     return text.lower()
@@ -96,4 +102,6 @@ try:
 except Exception as e:
     print(f"exception occured -> {e}")
 
+
+#implement cleaning using a seperate file where we would only send text without any special characters (only lowercase english alphabets and numbers allowed)
         
