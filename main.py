@@ -3,6 +3,8 @@ import time
 import whisper
 import torch
 import numpy as np
+import text_preprocess
+import lm_request
 # for index,name in enumerate(sr.Microphone.list_microphone_names()):
 #     print(f"Microphone with name {name} found for device index : {index}")
 WHISPER_MODEL="small"
@@ -10,13 +12,13 @@ WHISPER_SAMPLE_RATE=16000
 LISTEN_TIMEOUT=5
 PHRASE_TIME_LIMIT=20
 
-#gpu support 
+#gpu cleaned_text
 device="cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device -> {device}")
 
 
 def load_whisper(model_name="small"):
-    print(f"Loading the model -> {model_name} on CPU")
+    print(f"Loading the model -> {model_name} on {device}")
     try:
         model=whisper.load_model(model_name,device=device)
         print("Model Loaded Successfully")
@@ -26,7 +28,9 @@ def load_whisper(model_name="small"):
 
 def initialise_audio():
     recogniser=sr.Recognizer()
-    # recogniser.energy_threshold=500
+    # recogniser.energy_threshold=500:
+    recogniser.pause_threshold=3
+    #recogniser.non_speaking_duration=0.5 #look into this more
     print("Recognizer instance created\n\n")
 
     default_mic=None
@@ -98,10 +102,14 @@ try:
     while True:
         transcribed_text=transcribe_text(model=whisper_model,microphone=mic,recogniser=rec,timeout_seconds=LISTEN_TIMEOUT,phrase_tl=PHRASE_TIME_LIMIT)
         if transcribed_text:
-            print(f"\n\nYou've Said ---> {transcribed_text}")
+            cleaned_text=text_preprocess.preprocess_words(transcribed_text)
+            print(f"\n\nYou've Said ---> {cleaned_text}")
+            print("-"*15,"Response","-"*15)
+            print(lm_request.streaming_output(cleaned_text));
+            print("-"*15,"END","-"*15)
 except Exception as e:
     print(f"exception occured -> {e}")
 
 
 #implement cleaning using a seperate file where we would only send text without any special characters (only lowercase english alphabets and numbers allowed)
-        
+
