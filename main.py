@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import text_preprocess
 import lm_request
+import ollama_request
 # for index,name in enumerate(sr.Microphone.list_microphone_names()):
 #     print(f"Microphone with name {name} found for device index : {index}")
 WHISPER_MODEL="small"
@@ -58,6 +59,7 @@ def initialise_audio():
 
 def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
     with microphone as source:
+        print("\n\n","-"*10,"Say -> Stop Listening <- To exit","-"*10)
         print("\nAdjusting for ambient noise...\n")
         recogniser.adjust_for_ambient_noise(source,duration=2)
         print(f"Start Speaking, Timeout -> {timeout_seconds}, Time Limit for speaking -> {phrase_tl}")
@@ -104,12 +106,17 @@ try:
         if transcribed_text:
             cleaned_text=text_preprocess.preprocess_words(transcribed_text)
             print(f"\n\nYou've Said ---> {cleaned_text}")
+            sentences=cleaned_text.split(". ")
+            for sentence in sentences:
+                if "stop listening" in sentence and len(sentence.split()) < 5:
+                    exit()
+            # if(cleaned_text=="stop listening."): 
+            #     exit()
             print("-"*15,"Response","-"*15)
-            print(lm_request.streaming_output(cleaned_text));
+            print(ollama_request.streaming_response(cleaned_text));
             print("-"*15,"END","-"*15)
 except Exception as e:
     print(f"exception occured -> {e}")
 
 
-#implement cleaning using a seperate file where we would only send text without any special characters (only lowercase english alphabets and numbers allowed)
 

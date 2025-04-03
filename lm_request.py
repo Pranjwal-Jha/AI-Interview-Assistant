@@ -15,7 +15,7 @@ def chunk_output(prompt:str):
     print(model_reply)
 
 
-def streaming_output(prompt : str):
+def streaming_response(prompt : str):
     stream=client.chat.completions.create(model="local-model",messages=[
         {"role":"user","content":prompt}
     ],stream=True)
