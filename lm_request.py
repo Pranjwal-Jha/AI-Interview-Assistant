@@ -23,5 +23,3 @@ def streaming_response(prompt : str):
         if chunk.choices[0].delta.content is not None:
             print(chunk.choices[0].delta.content,end="",flush=True)
 
-# print("The Ai says ->\n")
-# print(model_reply)
