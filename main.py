@@ -5,6 +5,8 @@ import torch
 import numpy as np
 import text_preprocess
 import lm_request
+import gemini_pdf_test
+import suppress_alsa_error
 import ollama_request
 # for index,name in enumerate(sr.Microphone.list_microphone_names()):
 #     print(f"Microphone with name {name} found for device index : {index}")
@@ -95,12 +97,14 @@ def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
 whisper_model=load_whisper(WHISPER_MODEL)
 if whisper_model is not None:
     print("The model is loaded Successfully")
-mic,rec= initialise_audio()
+with suppress_alsa_error.no_alsa_errors():
+    mic,rec= initialise_audio()
 
 print("\nInitialization Complete, ready to start listening")
 print(f"\nSay {'stop listening'.upper()} to exit\n")
 
 try:
+    gemini_pdf_test.initialize_conversation()
     while True:
         transcribed_text=transcribe_text(model=whisper_model,microphone=mic,recogniser=rec,timeout_seconds=LISTEN_TIMEOUT,phrase_tl=PHRASE_TIME_LIMIT)
         if transcribed_text:
@@ -109,11 +113,11 @@ try:
             sentences=cleaned_text.split(". ")
             for sentence in sentences:
                 if "stop listening" in sentence and len(sentence.split()) < 5:
+                    gemini_pdf_test.clear_history_file()
                     exit()
-            # if(cleaned_text=="stop listening."): 
-            #     exit()
             print("-"*15,"Response","-"*15)
-            print(ollama_request.streaming_response(cleaned_text));
+            print(gemini_pdf_test.gemini_response(cleaned_text))
+            # print(ollama_request.streaming_response(cleaned_text))
             print("-"*15,"END","-"*15)
 except Exception as e:
     print(f"exception occured -> {e}")

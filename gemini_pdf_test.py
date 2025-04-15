@@ -31,16 +31,17 @@ except(FileNotFoundError, json.JSONDecodeError) as e:
     print(f"Error loading the chat history ",e)
     chat_history=[]
 
-def clear_history_file(history_file):
+def clear_history_file():
     with open(history_file,'w') as f:
         json.dump([],f)
-    print("History is cleared")
+    print("Clearing Chat History...")
 
 def template_format_message(input):
     template=ChatPromptTemplate.from_messages([ 
         ("system", """You are an AI interviewer simulating a job interview.
         Ask questions based *only* on the resume content.
-        Ask one question at a time based on: experience → skills → projects.
+        If the user attempts to deviate from the interview context, respond strictly and remind them to stay focused on the job interview
+        Ask one question at a time based on: experience then skills and then the projects.
         if User types "debug" do not act as interviewer and act as normal AI
         --- START RESUME ---
         {resume_context}
@@ -52,8 +53,40 @@ def template_format_message(input):
         "resume_context":full_text,
         "chat_history":chat_history,
         "user_input":input
-    }) 
+    })
+
+def initialize_conversation():
+    initial_prompt="Okay I am ready for Interview"
+    message=template_format_message(initial_prompt)
+    result=model.invoke(message)
+    print("AI Interviewer reply -> ",result.content)
+    chat_history.append(HumanMessage(initial_prompt))
+    chat_history.append(AIMessage(content=result.content))
+ 
+    with open(history_file,'w') as f:
+        json.dump([
+            {'type':msg.type,"content":msg.content}
+            for msg in chat_history
+        ],f,indent=2)
+    return result.content   
     
+def gemini_response(user_input):
+    if "clear" in user_input and len(user_input.split()) < 3:
+        chat_history.clear()
+        clear_history_file()
+        return "Chat History Cleared !"
+    message=template_format_message(user_input)
+    result=model.invoke(message)
+    chat_history.append(HumanMessage(content=user_input))
+    chat_history.append(AIMessage(content=result.content))
+
+    with open(history_file,'w') as f:
+        json.dump([
+            {'type':msg.type,"content":msg.content}
+            for msg in chat_history
+        ],f,indent=2)
+    return result.content
+
 
 def main():
     initial_prompt="Okay I am ready for Interview"
@@ -68,7 +101,7 @@ def main():
             break
         elif user_input=='clear':
             chat_history.clear()
-            clear_history_file(history_file)
+            clear_history_file()
             continue
         message=template_format_message(user_input)
         result=model.invoke(message)
@@ -85,3 +118,5 @@ def main():
 
 if __name__=="__main__":
     main()
+
+### make a requirement.txt fag
