@@ -1,2 +1,6 @@
 __pycache__/
 resume.txt
+resume.pdf
+interview-app/node_modules
+interview-app/.next
+.env

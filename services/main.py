@@ -59,6 +59,14 @@ def initialise_audio():
     print('-ERROR-'*5)
     return None,None
 
+whisper_model=load_whisper(WHISPER_MODEL)
+if whisper_model is not None:
+    print("The model is loaded Successfully")
+with suppress_alsa_error.no_alsa_errors():
+    mic,rec= initialise_audio()
+print("\nInitialization Complete, ready to start listening")
+print(f"\nSay {'stop listening'.upper()} to exit\n")
+
 def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
     with microphone as source:
         print("\n\n","-"*10,"Say -> Stop Listening <- To exit","-"*10)
@@ -93,15 +101,6 @@ def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
         else:
             return None
 
-
-whisper_model=load_whisper(WHISPER_MODEL)
-if whisper_model is not None:
-    print("The model is loaded Successfully")
-with suppress_alsa_error.no_alsa_errors():
-    mic,rec= initialise_audio()
-
-print("\nInitialization Complete, ready to start listening")
-print(f"\nSay {'stop listening'.upper()} to exit\n")
 
 try:
     gemini_pdf_test.initialize_conversation()
