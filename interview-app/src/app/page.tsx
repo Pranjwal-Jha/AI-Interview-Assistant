@@ -141,7 +141,7 @@ export default function AIInterviewer() {
       try {
         // Call the analyzeResume API
         const analysisResult = await analyzeResume(file);
-        setResumeData(analysisResult); // Store resume data if needed for getAIResponse
+        // setResumeData(analysisResult); // Store resume data if needed for getAIResponse
 
         setIsProcessing(false);
         // Add the AI's response after processing the resume
@@ -149,8 +149,8 @@ export default function AIInterviewer() {
           ...prev,
           {
             role: "assistant",
-            content:
-              "Thanks for uploading your resume! I see you have experience with machine learning models and data processing. Let's begin the interview. Could you tell me about your background in machine learning?",
+            content: analysisResult,
+            // "Thanks for uploading your resume! I see you have experience with machine learning models and data processing. Let's begin the interview. Could you tell me about your background in machine learning?",
           },
         ]);
       } catch (error) {

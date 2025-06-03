@@ -1,5 +1,4 @@
 import speech_recognition as sr
-import time
 import whisper
 import torch
 import numpy as np
@@ -73,14 +72,14 @@ def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
         print("\nAdjusting for ambient noise...\n")
         recogniser.adjust_for_ambient_noise(source,duration=2)
         print(f"Start Speaking, Timeout -> {timeout_seconds}, Time Limit for speaking -> {phrase_tl}")
-        
+
         audio_data=None
         try:
             audio_data=recogniser.listen(source,timeout=timeout_seconds,phrase_time_limit=phrase_tl)
             print("Processing speech...")
         except sr.WaitTimeoutError:
             return None
-        
+
         if audio_data:
             try:
                 raw_data=audio_data.get_raw_data(convert_rate=WHISPER_SAMPLE_RATE,convert_width=2)
@@ -88,7 +87,7 @@ def transcribe_text(model,microphone,recogniser,timeout_seconds,phrase_tl):
                 audio_normalised=audio_np.astype(np.float32)/32768.0
                 audio_tensor=torch.from_numpy(audio_normalised).to(device)
                 result=model.transcribe(audio_tensor,fp16=False)
-                    
+
                 text=result["text"].strip()
                 if text and len(text)>1:
                     return text.lower()
@@ -120,6 +119,3 @@ try:
             print("-"*15,"END","-"*15)
 except Exception as e:
     print(f"exception occured -> {e}")
-
-
-

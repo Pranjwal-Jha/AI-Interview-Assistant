@@ -59,9 +59,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
  * @param file - The resume file
  * @returns Structured data extracted from resume
  */
-export const analyzeResume = async (
-  file: File,
-): Promise<ResumeAnalysisResponse> => {
+export const analyzeResume = async (file: File): Promise<string> => {
   try {
     const formData = new FormData();
     formData.append("resume", file);
@@ -75,8 +73,10 @@ export const analyzeResume = async (
       throw new Error(`Server responded with ${response.status}`);
     }
 
-    const data: ResumeAnalysisResponse = await response.json();
-    return data;
+    // const data: ResumeAnalysisResponse = await response.json();
+    // return data;
+    const data = await response.json();
+    return data.data;
   } catch (error) {
     console.error("Error analyzing resume:", error);
     throw error;

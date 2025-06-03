@@ -4,3 +4,7 @@ resume.pdf
 interview-app/node_modules
 interview-app/.next
 .env
+test.py
+services/checkpoint.sqlite
+services/checkpoint.sqlite-shm
+services/checkpoint.sqlite-wal

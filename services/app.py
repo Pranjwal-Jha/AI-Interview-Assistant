@@ -3,10 +3,11 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from typing import List
 from langchain_core.documents import Document
+from langchain_core.messages import BaseMessage,HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
 import io # Needed to read file from request
 import os # Needed for file path manipulation or temporary saves
-
+import parse_pdf
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
 
@@ -37,7 +38,6 @@ def analyze_resume_endpoint():
 
             loader = PyPDFLoader(temp_path)
             pages = loader.load_and_split()
-
             # Clean up the temporary file
             os.remove(temp_path)
             print(f"Removed temporary file {temp_path}")
@@ -47,22 +47,28 @@ def analyze_resume_endpoint():
                 return jsonify({"success": False, "error": "No text could be extracted from the PDF"}), 400
 
             full_text = "\n".join([page.page_content for page in pages])
-
+            result=parse_pdf.compiled_graph.invoke({
+                "messages":"This is my resume",
+                "resume":full_text
+            },
+            config={"configurable": {"thread_id": "thread_1"}}
+            )
+            response=result['messages'][-1].content
             # TODO: Use an LLM (like Gemini or your Ollama setup) to analyze the full_text
             # and extract skills, experience, education, and summary.
             # For now, let's return dummy data based on the extracted text.
             # You'll replace this with actual LLM calls.
 
             # Dummy analysis (replace with actual LLM call)
-            analyzed_data = {
-                "skills": ["Python", "Machine Learning"], # Extract from text
-                "experience": ["3 years in NLP"], # Extract from text
-                "education": ["Bachelor's Degree"], # Extract from text
-                "summary": full_text[:200] + "..." # A snippet of the text as a dummy summary
-            }
+            # analyzed_data = {
+            #     "skills": ["Python", "Machine Learning"], # Extract from text
+            #     "experience": ["3 years in NLP"], # Extract from text
+            #     "education": ["Bachelor's Degree"], # Extract from text
+            #     "summary": full_text[:200] + "..." # A snippet of the text as a dummy summary
+            # }
 
 
-            return jsonify({"success": True, "data": analyzed_data}), 200
+            return jsonify({"success": True, "data": response}), 200
 
         except Exception as e:
             print(f"Error processing file: {e}")
