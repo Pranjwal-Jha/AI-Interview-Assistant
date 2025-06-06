@@ -8,6 +8,7 @@ from langchain_community.document_loaders import PyPDFLoader
 import io # Needed to read file from request
 import os # Needed for file path manipulation or temporary saves
 import parse_pdf
+from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
 
@@ -23,10 +24,6 @@ def analyze_resume_endpoint():
 
     if file:
         try:
-            # Read the file directly from the stream
-            # langchain_community.document_loaders.PyPDFLoader can take a file path.
-            # We might need to save it temporarily or find a way to load from memory.
-            # Let's save it temporarily for simplicity for now.
             temp_dir = "/tmp" # Using /tmp for temporary files, adjust if needed
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
@@ -54,20 +51,6 @@ def analyze_resume_endpoint():
             config={"configurable": {"thread_id": "thread_1"}}
             )
             response=result['messages'][-1].content
-            # TODO: Use an LLM (like Gemini or your Ollama setup) to analyze the full_text
-            # and extract skills, experience, education, and summary.
-            # For now, let's return dummy data based on the extracted text.
-            # You'll replace this with actual LLM calls.
-
-            # Dummy analysis (replace with actual LLM call)
-            # analyzed_data = {
-            #     "skills": ["Python", "Machine Learning"], # Extract from text
-            #     "experience": ["3 years in NLP"], # Extract from text
-            #     "education": ["Bachelor's Degree"], # Extract from text
-            #     "summary": full_text[:200] + "..." # A snippet of the text as a dummy summary
-            # }
-
-
             return jsonify({"success": True, "data": response}), 200
 
         except Exception as e:
@@ -76,8 +59,21 @@ def analyze_resume_endpoint():
     else:
          return jsonify({"success": False, "error": "File upload failed"}), 500
 
+@app.route('/transcribe',methods=['POST'])
+def transcribe_endpoint():
+    if 'audio' not in request.files:
+        return jsonify({"success":False,"error":"NO FILE"}),400
+    audio_file=request.files['audio']
+    if audio_file.filename=='':
+        return jsonify({"success": False, "error": "No selected file"}), 400
+    audio_data=audio_file.read()
+    transcribed_text=transcription_service_deepgram(audio_data)
+    if transcribed_text:
+        return jsonify({"success": True, "text": transcribed_text}), 200
+    else:
+        return jsonify({"success": False, "error": "Could not transcribe audio"}), 400
+
+
 
 if __name__ == '__main__':
-    # Ensure you are running this script and not your main.py for the backend API
-    # Use debug=True for development (auto-reloads on code changes)
     app.run(debug=True, port=5000)

@@ -42,15 +42,16 @@ export default function AIInterviewer() {
   ]);
   const [isRecording, setIsRecording] = useState(false);
   const [resumeUploaded, setResumeUploaded] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const [resumeName, setResumeName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null); // Explicitly type the ref
 
   // State to potentially store resume data after analysis, if needed for subsequent AI calls
-  const [resumeData, setResumeData] = useState<ResumeAnalysisResponse | null>(
-    null,
-  );
+  const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -64,63 +65,118 @@ export default function AIInterviewer() {
       }
     }
   }, [messages]);
-
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup on component unmount
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
   const handleRecordToggle = async () => {
     if (isRecording) {
       // --- Stop recording logic ---
       setIsRecording(false);
       setIsProcessing(true);
 
-      // Placeholder for actual audio recording stop logic
-      // Once recording stops, you would get an audio Blob
+      // Stop the media recorder
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        mediaRecorderRef.current.stop();
+      }
 
+      // Stop all tracks in the stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    } else {
+      // --- Start recording logic ---
       try {
-        // Placeholder for getting audioBlob from recording
-        // const audioBlob = await stopRecordingAndGetBlob(); // You need to implement this
+        // Request microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            sampleRate: 16000, // Match your backend expectation
+            channelCount: 1, // Mono audio
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        });
 
-        // Simulate getting a dummy audioBlob for demonstration
-        const dummyAudioBlob = new Blob(["dummy audio data"], {
-          type: "audio/wav",
-        }); // Replace with actual audio blob
+        streamRef.current = stream;
+        audioChunksRef.current = [];
 
-        // Transcribe the audio
-        const transcribedText = await transcribeAudio(dummyAudioBlob);
+        // Create MediaRecorder
+        const mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "audio/webm;codecs=opus", // Most browsers support this
+        });
 
-        // Add user's transcribed message to state
-        setMessages((prev) => [
-          ...prev,
-          { role: "user", content: transcribedText },
-        ]);
+        mediaRecorderRef.current = mediaRecorder;
 
-        // Get AI response based on transcribed text and resume data
-        const aiResponse = await getAIResponse(
-          transcribedText,
-          resumeData || undefined,
-        );
+        // Handle data available event
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
 
-        // Add AI's response to state
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: aiResponse },
-        ]);
+        // Handle recording stop event
+        mediaRecorder.onstop = async () => {
+          // Create blob from recorded chunks
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: "audio/webm;codecs=opus",
+          });
+
+          try {
+            console.log(
+              "Sending audio blob to transcription...",
+              audioBlob.size,
+              "bytes",
+            );
+
+            // Send the REAL recorded audio to transcription
+            const transcribedText = await transcribeAudio(audioBlob);
+
+            // Add user's transcribed message to state
+            setMessages((prev) => [
+              ...prev,
+              { role: "user", content: `${transcribedText}` },
+            ]);
+          } catch (error) {
+            console.error("Error during transcription:", error);
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content: `Transcription error: ${error instanceof Error ? error.message : "Unknown error"}`,
+              },
+            ]);
+          } finally {
+            setIsProcessing(false);
+          }
+        };
+
+        // Start recording
+        mediaRecorder.start();
+        setIsRecording(true);
       } catch (error) {
-        console.error("Error during transcription or AI response:", error);
-        // Optionally, add an error message to the chat
+        console.error("Error accessing microphone:", error);
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
-            content: "Sorry, there was an error processing your request.",
+            content: "Error accessing microphone. Please check permissions.",
           },
         ]);
-      } finally {
-        setIsProcessing(false);
       }
-    } else {
-      // --- Start recording logic ---
-      setIsRecording(true);
-      // Placeholder for actual audio recording start logic
-      // e.g., using MediaRecorder API
     }
   };
 
@@ -139,24 +195,18 @@ export default function AIInterviewer() {
       setIsProcessing(true);
 
       try {
-        // Call the analyzeResume API
         const analysisResult = await analyzeResume(file);
-        // setResumeData(analysisResult); // Store resume data if needed for getAIResponse
-
         setIsProcessing(false);
-        // Add the AI's response after processing the resume
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
             content: analysisResult,
-            // "Thanks for uploading your resume! I see you have experience with machine learning models and data processing. Let's begin the interview. Could you tell me about your background in machine learning?",
           },
         ]);
       } catch (error) {
         console.error("Error analyzing resume:", error);
         setIsProcessing(false);
-        // Add an error message to the chat
         setMessages((prev) => [
           ...prev,
           {

@@ -8,3 +8,6 @@ test.py
 services/checkpoint.sqlite
 services/checkpoint.sqlite-shm
 services/checkpoint.sqlite-wal
+services/*.flac
+services/*.mp3
+services/*.wav
