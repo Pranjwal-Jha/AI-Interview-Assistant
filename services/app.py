@@ -73,6 +73,16 @@ def transcribe_endpoint():
     else:
         return jsonify({"success": False, "error": "Could not transcribe audio"}), 400
 
+@app.route('/generate_response',methods=['POST'])
+def get_llm_response():
+    try:
+        data=request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No JSON data provided"}), 400
+        user_input=data.get('user_input')
+        resume_data=data.get('resume_data')
+        ai_response=
+    if 'user_input' or 'resume_data' not in request.body:
 
 
 if __name__ == '__main__':

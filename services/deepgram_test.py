@@ -8,7 +8,7 @@ AUDIO_FILE = "Recording3.mp3"
 
 def transcription_service_deepgram(audio):
     try:
-        deepgram = DeepgramClient("e60b10b10869fc7b1ec73a6f8a3bdc0511ad1acb")
+        deepgram = DeepgramClient("")
         payload: FileSource = {
             "buffer": audio,
         }
