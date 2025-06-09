@@ -8,6 +8,7 @@ from langchain_community.document_loaders import PyPDFLoader
 import io # Needed to read file from request
 import os # Needed for file path manipulation or temporary saves
 import parse_pdf
+from llm_response import compiled_graph
 from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
@@ -44,8 +45,8 @@ def analyze_resume_endpoint():
                 return jsonify({"success": False, "error": "No text could be extracted from the PDF"}), 400
 
             full_text = "\n".join([page.page_content for page in pages])
-            result=parse_pdf.compiled_graph.invoke({
-                "messages":"This is my resume",
+            result=compiled_graph.invoke({
+                "messages":[HumanMessage(content="This is my resume")],
                 "resume":full_text
             },
             config={"configurable": {"thread_id": "thread_1"}}
@@ -81,9 +82,15 @@ def get_llm_response():
             return jsonify({"success": False, "error": "No JSON data provided"}), 400
         user_input=data.get('user_input')
         resume_data=data.get('resume_data')
-        ai_response=
-    if 'user_input' or 'resume_data' not in request.body:
-
+        ai_response=compiled_graph.invoke({
+            "messages":[HumanMessage(content=user_input)],
+            "resume":resume_data or ""
+        },{"configurable":{"thread_id":"thread_1"}})
+        response_content=ai_response['messages'][-1].content
+        return jsonify({"success":True,"response":response_content}),200
+    except Exception as e:
+        print(f"Error in generate_response: {e}")
+        return jsonify({"success": False, "error": f"Server error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
