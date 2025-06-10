@@ -44,7 +44,6 @@ graph=StateGraph(InterviewChat)
 graph.add_node("greet_candidate",greet_candidate)
 graph.add_node("get_gemini_response",get_gemini_response)
 graph.add_edge(START,"greet_candidate")
-# graph.add_edge("greet_candidate","get_gemini_response")
 graph.add_conditional_edges(
     "greet_candidate",
     should_continue,

@@ -91,7 +91,7 @@ export const analyzeResume = async (file: File): Promise<string> => {
  */
 export const getAIResponse = async (
   userText: string,
-  resumeData?: ResumeAnalysisResponse,
+  resumeData?: ResumeAnalysisResponse | null,
 ): Promise<string> => {
   try {
     const response = await fetch(`${API_URL}/generate_response`, {

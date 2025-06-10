@@ -150,6 +150,16 @@ export default function AIInterviewer() {
               ...prev,
               { role: "user", content: `${transcribedText}` },
             ]);
+            console.log("Sending transcribed text to A.I for response...");
+            setIsProcessing(true);
+            const aiResponseContent = await getAIResponse(
+              transcribedText,
+              null,
+            );
+            setMessages((prev) => [
+              ...prev,
+              { role: "assistant", content: aiResponseContent },
+            ]);
           } catch (error) {
             console.error("Error during transcription:", error);
             setMessages((prev) => [
