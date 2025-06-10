@@ -1,13 +1,9 @@
 # speech_text/services/app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from typing import List
-from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage,HumanMessage
+from langchain_core.messages import HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
-import io # Needed to read file from request
 import os # Needed for file path manipulation or temporary saves
-import parse_pdf
 from llm_response import compiled_graph
 from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
@@ -22,7 +18,9 @@ def analyze_resume_endpoint():
     file = request.files['resume']
     if file.filename == '':
         return jsonify({"success": False, "error": "No selected file"}), 400
-
+    session_id=request.form.get('sessionId')
+    if not session_id:
+        return jsonify({"success": False, "error": "Invalid Session"}), 400
     if file:
         try:
             temp_dir = "/tmp" # Using /tmp for temporary files, adjust if needed
@@ -49,10 +47,10 @@ def analyze_resume_endpoint():
                 "messages":[HumanMessage(content="This is my resume")],
                 "resume":full_text
             },
-            config={"configurable": {"thread_id": "thread_1"}}
+            config={"configurable": {"thread_id": session_id}}
             )
             response=result['messages'][-1].content
-            return jsonify({"success": True, "data": response}), 200
+            return jsonify({"success": True, "data": response,"sessionId":session_id}), 200
 
         except Exception as e:
             print(f"Error processing file: {e}")
@@ -81,11 +79,14 @@ def get_llm_response():
         if not data:
             return jsonify({"success": False, "error": "No JSON data provided"}), 400
         user_input=data.get('user_input')
+        session_id=data.get('session_id')
+        if not session_id:
+            return jsonify({"success": False, "error": "Invalid Session"}), 400
         resume_data=data.get('resume_data')
         ai_response=compiled_graph.invoke({
             "messages":[HumanMessage(content=user_input)],
             "resume":resume_data or ""
-        },{"configurable":{"thread_id":"thread_1"}})
+        },{"configurable":{"thread_id":session_id}})
         response_content=ai_response['messages'][-1].content
         return jsonify({"success":True,"response":response_content}),200
     except Exception as e:

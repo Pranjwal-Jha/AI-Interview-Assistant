@@ -26,7 +26,7 @@ def get_gemini_response(state:InterviewChat):
     response=llm.invoke(interview_prompt.invoke({
         "resume_context":resume_text,
         "messages":messages
-    }),{"configurable":{"thread_id":"thread_1"}},
+    })#,{"configurable":{"thread_id":"thread_1"}},
     )
     return{
         "messages":[response]

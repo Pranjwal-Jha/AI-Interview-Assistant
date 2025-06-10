@@ -59,10 +59,14 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
  * @param file - The resume file
  * @returns Structured data extracted from resume
  */
-export const analyzeResume = async (file: File): Promise<string> => {
+export const analyzeResume = async (
+  file: File,
+  sessionId: string,
+): Promise<string> => {
   try {
     const formData = new FormData();
     formData.append("resume", file);
+    formData.append("sessionId", sessionId);
 
     const response = await fetch(`${API_URL}/analyze_resume`, {
       method: "POST",
@@ -91,6 +95,7 @@ export const analyzeResume = async (file: File): Promise<string> => {
  */
 export const getAIResponse = async (
   userText: string,
+  sessionId: string,
   resumeData?: ResumeAnalysisResponse | null,
 ): Promise<string> => {
   try {
@@ -101,6 +106,7 @@ export const getAIResponse = async (
       },
       body: JSON.stringify({
         user_input: userText,
+        session_id: sessionId,
         resume_data: resumeData || null,
       }),
     });

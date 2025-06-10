@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { v4 as uuidv4 } from "uuid";
 import {
   Card,
   CardContent,
@@ -49,7 +50,7 @@ export default function AIInterviewer() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null); // Explicitly type the ref
-
+  const [sessionId, setSessionId] = useState<string | null>(null);
   // State to potentially store resume data after analysis, if needed for subsequent AI calls
   const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
 
@@ -152,14 +153,23 @@ export default function AIInterviewer() {
             ]);
             console.log("Sending transcribed text to A.I for response...");
             setIsProcessing(true);
-            const aiResponseContent = await getAIResponse(
-              transcribedText,
-              null,
-            );
-            setMessages((prev) => [
-              ...prev,
-              { role: "assistant", content: aiResponseContent },
-            ]);
+            if (sessionId) {
+              const aiResponseContent = await getAIResponse(
+                transcribedText,
+                sessionId,
+                null,
+              );
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: aiResponseContent },
+              ]);
+            } else {
+              console.log("Session ID not available");
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: "Error: Interview ID not found" },
+              ]);
+            }
           } catch (error) {
             console.error("Error during transcription:", error);
             setMessages((prev) => [
@@ -195,7 +205,8 @@ export default function AIInterviewer() {
     if (file) {
       setResumeName(file.name);
       setResumeUploaded(true);
-
+      const newSessionID = crypto.randomUUID();
+      setSessionId(newSessionID);
       // Add a message indicating file upload started
       setMessages((prev) => [
         ...prev,
@@ -205,7 +216,7 @@ export default function AIInterviewer() {
       setIsProcessing(true);
 
       try {
-        const analysisResult = await analyzeResume(file);
+        const analysisResult = await analyzeResume(file, newSessionID);
         setIsProcessing(false);
         setMessages((prev) => [
           ...prev,
