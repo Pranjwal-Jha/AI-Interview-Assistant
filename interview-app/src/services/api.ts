@@ -122,3 +122,73 @@ export const getAIResponse = async (
     throw error;
   }
 };
+
+/**
+ * Gets AI response for an interview question with streaming
+ * @param userText - The user's transcribed text or message
+ * @param sessionId - The session ID for the conversation
+ * @param onChunk - Callback function called for each chunk received
+ * @param resumeData - Optional resume data for context
+ * @returns Promise that resolves when streaming is complete
+ */
+export const getAIResponseStream = async (
+  userText: string,
+  sessionId: string,
+  onChunk: (chunk: string) => void,
+  resumeData?: ResumeAnalysisResponse | null,
+): Promise<void> => {
+  try {
+    const response = await fetch(`${API_URL}/generate_response_stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_input: userText,
+        session_id: sessionId,
+        resume_data: resumeData || null,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server responded with ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Failed to get response reader");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.startsWith("data: ")) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            if (data.type === "chunk" && data.content) {
+              onChunk(data.content);
+            } else if (data.type === "end") {
+              return; // Stream ended successfully
+            } else if (data.error) {
+              throw new Error(data.error);
+            }
+          } catch (parseError) {
+            console.error("Error parsing streaming data:", parseError);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error getting AI response stream:", error);
+    throw error;
+  }
+};

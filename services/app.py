@@ -1,5 +1,5 @@
-# speech_text/services/app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response, g
+import json
 from flask_cors import CORS
 from langchain_core.messages import HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
@@ -9,7 +9,6 @@ from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
 
-# Resume Analysis endpoint
 @app.route('/analyze_resume', methods=['POST'])
 def analyze_resume_endpoint():
     if 'resume' not in request.files:
@@ -92,6 +91,61 @@ def get_llm_response():
     except Exception as e:
         print(f"Error in generate_response: {e}")
         return jsonify({"success": False, "error": f"Server error: {str(e)}"}), 500
+
+@app.route('/generate_response_stream', methods=['POST'])
+def get_llm_response_stream():
+    # Get the request data BEFORE the generator function
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+
+        user_input = data.get('user_input')
+        session_id = data.get('session_id')
+
+        if not user_input:
+            return jsonify({"error": "No user input provided"}), 400
+
+        if not session_id:
+            return jsonify({"error": "Session ID not provided"}), 400
+
+        resume_data = data.get('resume_data')
+
+    except Exception as e:
+        return jsonify({"error": f"Error parsing request: {str(e)}"}), 400
+
+    def generate():
+        try:
+            # Stream the response from the graph
+            for message_chunk, metadata in compiled_graph.stream({
+                "messages": [HumanMessage(content=user_input)],
+                "resume": resume_data or ""
+            },
+            stream_mode="messages",
+            config={"configurable": {"thread_id": session_id}}
+            ):
+                if message_chunk.content:
+                    # Send each chunk as Server-Sent Events (SSE)
+                    yield f"data: {json.dumps({'content': message_chunk.content, 'type': 'chunk'})}\n\n"
+
+            # Send end signal
+            yield f"data: {json.dumps({'type': 'end'})}\n\n"
+
+        except Exception as e:
+            print(f"Error in generate_response_stream: {e}")
+            yield f"data: {json.dumps({'error': f'Server error: {str(e)}'})}\n\n"
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',  # Changed to proper SSE mimetype
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

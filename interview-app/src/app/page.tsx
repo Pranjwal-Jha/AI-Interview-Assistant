@@ -17,7 +17,12 @@ import { Label } from "@/components/ui/label"; // Although not used in the curre
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { analyzeResume, getAIResponse, transcribeAudio } from "@/services/api"; // Import API functions
+import {
+  analyzeResume,
+  getAIResponse,
+  transcribeAudio,
+  getAIResponseStream,
+} from "@/services/api"; // Import API functions
 
 // Define message types for better clarity and type safety
 interface Message {
@@ -154,15 +159,61 @@ export default function AIInterviewer() {
             console.log("Sending transcribed text to A.I for response...");
             setIsProcessing(true);
             if (sessionId) {
-              const aiResponseContent = await getAIResponse(
-                transcribedText,
-                sessionId,
-                null,
-              );
+              const tempMessageIndex = messages.length + 1; // +1 because user message was just added
               setMessages((prev) => [
                 ...prev,
-                { role: "assistant", content: aiResponseContent },
+                { role: "assistant", content: "" }, // Empty placeholder
               ]);
+
+              let accumulatedContent = "";
+
+              try {
+                await getAIResponseStream(
+                  transcribedText,
+                  sessionId,
+                  (chunk: string) => {
+                    // This callback is called for each chunk
+                    accumulatedContent += chunk;
+
+                    // Update the last assistant message with accumulated content
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      const lastIndex = newMessages.length - 1;
+                      if (newMessages[lastIndex]?.role === "assistant") {
+                        newMessages[lastIndex] = {
+                          ...newMessages[lastIndex],
+                          content: accumulatedContent,
+                        };
+                      }
+                      return newMessages;
+                    });
+                  },
+                  null,
+                );
+              } catch (error) {
+                console.error("Error during streaming:", error);
+                // Replace the placeholder with error message
+                setMessages((prev) => {
+                  const newMessages = [...prev];
+                  const lastIndex = newMessages.length - 1;
+                  if (newMessages[lastIndex]?.role === "assistant") {
+                    newMessages[lastIndex] = {
+                      ...newMessages[lastIndex],
+                      content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    };
+                  }
+                  return newMessages;
+                });
+              }
+              // const aiResponseContent = await getAIResponse(
+              //   transcribedText,
+              //   sessionId,
+              //   null,
+              // );
+              // setMessages((prev) => [
+              //   ...prev,
+              //   { role: "assistant", content: aiResponseContent },
+              // ]);
             } else {
               console.log("Session ID not available");
               setMessages((prev) => [
