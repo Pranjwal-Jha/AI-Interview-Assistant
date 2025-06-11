@@ -1,0 +1,15 @@
+Flask
+Flask-Cors
+langchain-core
+langchain-community
+langchain-google-genai
+langgraph
+deepgram-sdk
+openai
+httpx
+SpeechRecognition
+whisper
+torch
+numpy
+ollama
+gunicorn

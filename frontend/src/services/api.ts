@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000"; // Base URL for your Python backend
+const API_URL = "http://localhost:5000";
 
 interface TranscriptionResponse {
   text: string;
