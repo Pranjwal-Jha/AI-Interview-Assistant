@@ -1,37 +1,24 @@
-// src/services/api.ts
-
 const API_URL = "http://localhost:5000"; // Base URL for your Python backend
 
-// Interface for API responses
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
 }
-
-// Interface for transcription response
 interface TranscriptionResponse {
   text: string;
 }
 
-// Interface for LLM response
 interface LLMResponse {
   response: string;
 }
 
-// Interface for resume analysis
 interface ResumeAnalysisResponse {
   skills: string[];
   experience: string[];
   education: string[];
   summary: string;
 }
-
-/**
- * Transcribes audio using Whisper API
- * @param audioBlob - The recorded audio blob
- * @returns The transcribed text
- */
 export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   try {
     const formData = new FormData();
@@ -54,11 +41,6 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   }
 };
 
-/**
- * Uploads and analyzes a resume
- * @param file - The resume file
- * @returns Structured data extracted from resume
- */
 export const analyzeResume = async (
   file: File,
   sessionId: string,
@@ -77,8 +59,6 @@ export const analyzeResume = async (
       throw new Error(`Server responded with ${response.status}`);
     }
 
-    // const data: ResumeAnalysisResponse = await response.json();
-    // return data;
     const data = await response.json();
     return data.data;
   } catch (error) {
@@ -87,12 +67,6 @@ export const analyzeResume = async (
   }
 };
 
-/**
- * Gets AI response for an interview question based on user input
- * @param userText - The user's transcribed text or message
- * @param resumeData - Optional resume data for context
- * @returns The AI's interview response
- */
 export const getAIResponse = async (
   userText: string,
   sessionId: string,
@@ -123,14 +97,6 @@ export const getAIResponse = async (
   }
 };
 
-/**
- * Gets AI response for an interview question with streaming
- * @param userText - The user's transcribed text or message
- * @param sessionId - The session ID for the conversation
- * @param onChunk - Callback function called for each chunk received
- * @param resumeData - Optional resume data for context
- * @returns Promise that resolves when streaming is complete
- */
 export const getAIResponseStream = async (
   userText: string,
   sessionId: string,

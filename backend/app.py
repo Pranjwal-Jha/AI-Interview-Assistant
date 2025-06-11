@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify, Response, g
+from flask import Flask, request, jsonify, Response
 import json
 from flask_cors import CORS
 from langchain_core.messages import HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
-import os # Needed for file path manipulation or temporary saves
+import os
 from llm_response import compiled_graph
 from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
@@ -22,7 +22,7 @@ def analyze_resume_endpoint():
         return jsonify({"success": False, "error": "Invalid Session"}), 400
     if file:
         try:
-            temp_dir = "/tmp" # Using /tmp for temporary files, adjust if needed
+            temp_dir = "/tmp"
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
             filename=file.filename or "uploaded_resume.pdf"
@@ -92,9 +92,9 @@ def get_llm_response():
         print(f"Error in generate_response: {e}")
         return jsonify({"success": False, "error": f"Server error: {str(e)}"}), 500
 
+#Look into streaming response more and SSE
 @app.route('/generate_response_stream', methods=['POST'])
 def get_llm_response_stream():
-    # Get the request data BEFORE the generator function
     try:
         data = request.get_json()
         if not data:
@@ -116,7 +116,6 @@ def get_llm_response_stream():
 
     def generate():
         try:
-            # Stream the response from the graph
             for message_chunk, metadata in compiled_graph.stream({
                 "messages": [HumanMessage(content=user_input)],
                 "resume": resume_data or ""
