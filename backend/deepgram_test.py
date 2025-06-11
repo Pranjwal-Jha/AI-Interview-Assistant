@@ -1,4 +1,3 @@
-# Install the Deepgram Python SDK # pip install deepgram-sdk==3.*
 from deepgram import (
     DeepgramClient,
     PrerecordedOptions,

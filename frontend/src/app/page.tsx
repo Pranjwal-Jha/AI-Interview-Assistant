@@ -27,12 +27,6 @@ interface Message {
 }
 
 // Define type for resume data
-interface ResumeAnalysisResponse {
-  skills: string[];
-  experience: string[];
-  education: string[];
-  summary: string;
-}
 
 export default function AIInterviewer() {
   const [messages, setMessages] = useState<Message[]>([
