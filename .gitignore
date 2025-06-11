@@ -19,3 +19,4 @@ backend/suppress_alsa_error.py
 backend/test_template.json
 backend/text_preprocess.py
 backend/gemini_pdf_test.py
+backend/env
