@@ -3,11 +3,17 @@ from deepgram import (
     PrerecordedOptions,
     FileSource,
 )
+import os
+
 AUDIO_FILE = "Recording3.mp3"
 
 def transcription_service_deepgram(audio):
     try:
-        deepgram = DeepgramClient("")
+        deepgram_api_key=os.environ.get("DEEPGRAM_API_KEY")
+        if not deepgram_api_key:
+            print("Error no API key for Deepgram")
+            return None
+        deepgram = DeepgramClient(deepgram_api_key)
         payload: FileSource = {
             "buffer": audio,
         }
