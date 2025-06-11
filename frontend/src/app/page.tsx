@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { v4 as uuidv4 } from "uuid";
 import {
   Card,
   CardContent,
@@ -11,15 +10,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Input } from "@/components/ui/input"; // Although not used in the current UI flow, keeping import
-import { Mic, MicOff, FileUp, Send, Play, Loader2 } from "lucide-react";
-import { Label } from "@/components/ui/label"; // Although not used in the current UI flow, keeping import
+import { Mic, MicOff, FileUp, Loader2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   analyzeResume,
-  getAIResponse,
   transcribeAudio,
   getAIResponseStream,
 } from "@/services/api"; // Import API functions
@@ -57,12 +53,10 @@ export default function AIInterviewer() {
   const scrollAreaRef = useRef<HTMLDivElement | null>(null); // Explicitly type the ref
   const [sessionId, setSessionId] = useState<string | null>(null);
   // State to potentially store resume data after analysis, if needed for subsequent AI calls
-  const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
+  // const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
 
-  // Scroll to bottom when messages update
   useEffect(() => {
     if (scrollAreaRef.current) {
-      // Add null check before querying
       const scrollContainer = scrollAreaRef.current.querySelector(
         "[data-radix-scroll-area-viewport]",
       );
@@ -159,7 +153,6 @@ export default function AIInterviewer() {
             console.log("Sending transcribed text to A.I for response...");
             setIsProcessing(true);
             if (sessionId) {
-              const tempMessageIndex = messages.length + 1; // +1 because user message was just added
               setMessages((prev) => [
                 ...prev,
                 { role: "assistant", content: "" }, // Empty placeholder
@@ -205,6 +198,7 @@ export default function AIInterviewer() {
                   return newMessages;
                 });
               }
+              //If want to revert back to normal non streaming text inputs
               // const aiResponseContent = await getAIResponse(
               //   transcribedText,
               //   sessionId,

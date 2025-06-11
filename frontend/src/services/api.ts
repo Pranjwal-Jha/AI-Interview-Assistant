@@ -1,10 +1,5 @@
 const API_URL = "http://localhost:5000"; // Base URL for your Python backend
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
 interface TranscriptionResponse {
   text: string;
 }
