@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Mic, MicOff, FileUp, Loader2 } from "lucide-react";
+import { Mic, MicOff, FileUp, Loader2, Code } from "lucide-react"; // Added Code icon
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -18,7 +18,9 @@ import {
   analyzeResume,
   transcribeAudio,
   getAIResponseStream,
-} from "@/services/api"; // Import API functions
+  // submitCode, // We will add this later if needed
+} from "@/services/api";
+import CodeEditor from "@/components/CodeEditor"; // Import the CodeEditor component
 
 // Define message types for better clarity and type safety
 interface Message {
@@ -48,6 +50,9 @@ export default function AIInterviewer() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   // State to potentially store resume data after analysis, if needed for subsequent AI calls
   // const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
+
+  // New state for Code Editor visibility
+  const [isCodeEditorVisible, setIsCodeEditorVisible] = useState(false);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -284,135 +289,185 @@ export default function AIInterviewer() {
     fileInputRef.current?.click(); // Use optional chaining
   };
 
+  // Handle code submission from the CodeEditor
+  const handleCodeSubmit = (code: string) => {
+    console.log("Code submitted:", code);
+    // For now, just add it to the messages.
+    // You would integrate with your backend API here later.
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: `Submitted C++ Code:\n\`\`\`cpp\n${code}\n\`\`\``,
+      },
+    ]);
+    setIsCodeEditorVisible(false); // Close the editor after submission
+  };
+
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto p-4">
-      <header className="text-center mb-4">
-        <h1 className="text-2xl font-bold">AI Interview Assistant</h1>
-        <p className="text-gray-500">
-          Speak naturally - your responses will be transcribed and evaluated
-        </p>
-      </header>
+    // Outer container to center the main content initially
+    <div className="relative flex justify-center h-screen w-full overflow-hidden">
+      {/* Main content area - centered initially, shifts left when editor is visible */}
+      <div
+        className={`p-4 transition-all duration-300 flex-shrink-0 w-full max-w-4xl ${
+          isCodeEditorVisible ? "translate-x-[-25vw]" : "" // Translate left by half editor width
+        }`}
+      >
+        <header className="text-center mb-4">
+          <h1 className="text-2xl font-bold">AI Interview Assistant</h1>
+          <p className="text-gray-500">
+            Speak naturally - your responses will be transcribed and evaluated
+          </p>
+        </header>
 
-      <Card className="flex-grow flex flex-col">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Interview Session</CardTitle>
-            {resumeUploaded && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <FileUp className="h-3 w-3" />
-                Resume uploaded: {resumeName}
-              </Badge>
-            )}
-          </div>
-          <CardDescription>
-            Speak clearly and concisely. The AI will analyze your responses.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="flex-grow flex flex-col">
-          <ScrollArea className="flex-grow pr-4" ref={scrollAreaRef}>
-            <div className="space-y-4">
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"}`}
+        {/* Adjust Card height to fit within the flex container */}
+        <Card className="flex-grow flex flex-col h-[calc(100vh-120px)]">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Interview Session</CardTitle>
+              {/* Container for right-aligned items */}
+              <div className="flex items-center gap-2">
+                {resumeUploaded && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <FileUp className="h-3 w-3" />
+                    Resume uploaded
+                  </Badge>
+                )}
+                {/* Button to toggle Code Editor visibility - moved to be the last item in this flex container */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCodeEditorVisible(!isCodeEditorVisible)}
+                  className="flex items-center gap-1"
                 >
+                  <Code className="h-4 w-4" />
+                  Code Editor
+                </Button>
+              </div>
+            </div>
+            <CardDescription>
+              Speak clearly and concisely. The AI will analyze your responses.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="flex-grow flex flex-col p-6">
+            <ScrollArea
+              className="flex-grow pr-4  h-[calc(50vh-450px)]"
+              ref={scrollAreaRef}
+            >
+              <div className="space-y-4">
+                {messages.map((message, index) => (
                   <div
-                    className={`flex items-start gap-3 max-w-3/4 ${message.role === "assistant" ? "" : "flex-row-reverse"}`}
+                    key={index}
+                    className={`flex ${message.role === "assistant" ? "justify-start" : "justify-end"}`}
                   >
-                    <Avatar
-                      className={
-                        message.role === "assistant"
-                          ? "bg-blue-100"
-                          : "bg-green-100"
-                      }
-                    >
-                      <AvatarFallback>
-                        {message.role === "assistant" ? "AI" : "You"}
-                      </AvatarFallback>
-                    </Avatar>
                     <div
-                      className={`rounded-lg p-3 ${
-                        message.role === "assistant"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-blue-600 text-white"
-                      }`}
+                      className={`flex items-start gap-3 max-w-3/4 ${message.role === "assistant" ? "" : "flex-row-reverse"}`}
                     >
-                      {message.content}
+                      <Avatar
+                        className={
+                          message.role === "assistant"
+                            ? "bg-blue-100"
+                            : "bg-green-100"
+                        }
+                      >
+                        <AvatarFallback>
+                          {message.role === "assistant" ? "AI" : "You"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div
+                        className={`rounded-lg p-3 ${
+                          message.role === "assistant"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-blue-600 text-white"
+                        }`}
+                      >
+                        {message.content}
+                      </div>
                     </div>
                   </div>
+                ))}
+                {isProcessing && (
+                  <div className="flex justify-start">
+                    <div className="flex items-start gap-3 max-w-3/4">
+                      <Avatar className="bg-blue-100">
+                        <AvatarFallback>AI</AvatarFallback>
+                      </Avatar>
+                      <div className="rounded-lg p-3 bg-gray-100 text-gray-800">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+
+          <Separator />
+
+          <CardFooter className="pt-4">
+            <div className="w-full space-y-4">
+              {!resumeUploaded && (
+                <div className="flex flex-col items-center justify-center">
+                  <p className="text-gray-500 mb-2">
+                    Please upload your resume to begin
+                  </p>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx" // Specify accepted file types
+                    onChange={handleFileUpload}
+                  />
+                  <Button
+                    onClick={triggerFileUpload}
+                    className="flex items-center gap-2"
+                  >
+                    <FileUp className="h-4 w-4" />
+                    Upload Resume
+                  </Button>
                 </div>
-              ))}
-              {isProcessing && (
-                <div className="flex justify-start">
-                  <div className="flex items-start gap-3 max-w-3/4">
-                    <Avatar className="bg-blue-100">
-                      <AvatarFallback>AI</AvatarFallback>
-                    </Avatar>
-                    <div className="rounded-lg p-3 bg-gray-100 text-gray-800">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
+              )}
+
+              {resumeUploaded && (
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant={isRecording ? "destructive" : "default"}
+                    className="rounded-full w-12 h-12 p-0 flex items-center justify-center"
+                    onClick={handleRecordToggle}
+                    disabled={isProcessing}
+                    aria-label={
+                      isRecording ? "Stop recording" : "Start recording"
+                    }
+                  >
+                    {isRecording ? (
+                      <MicOff className="h-5 w-5" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                  </Button>
+                  <div className="flex-grow text-sm text-gray-500">
+                    {isRecording
+                      ? "Recording... Click to stop"
+                      : "Click to start speaking"}
                   </div>
+                  {/* Playback button - currently does nothing */}
+                  {/* <Button variant="outline" className="rounded-full w-12 h-12 p-0 flex items-center justify-center" disabled>
+                    <Play className="h-5 w-5" />
+                  </Button> */}
                 </div>
               )}
             </div>
-          </ScrollArea>
-        </CardContent>
+          </CardFooter>
+        </Card>
+      </div>
 
-        <Separator />
-
-        <CardFooter className="pt-4">
-          <div className="w-full space-y-4">
-            {!resumeUploaded && (
-              <div className="flex flex-col items-center justify-center">
-                <p className="text-gray-500 mb-2">
-                  Please upload your resume to begin
-                </p>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept=".pdf,.doc,.docx" // Specify accepted file types
-                  onChange={handleFileUpload}
-                />
-                <Button
-                  onClick={triggerFileUpload}
-                  className="flex items-center gap-2"
-                >
-                  <FileUp className="h-4 w-4" />
-                  Upload Resume
-                </Button>
-              </div>
-            )}
-
-            {resumeUploaded && (
-              <div className="flex items-center gap-4">
-                <Button
-                  variant={isRecording ? "destructive" : "default"}
-                  className="rounded-full w-12 h-12 p-0 flex items-center justify-center"
-                  onClick={handleRecordToggle}
-                  disabled={isProcessing}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-5 w-5" />
-                  ) : (
-                    <Mic className="h-5 w-5" />
-                  )}
-                </Button>
-                <div className="flex-grow text-sm text-gray-500">
-                  {isRecording
-                    ? "Recording... Click to stop"
-                    : "Click to start speaking"}
-                </div>
-                {/* Playback button - currently does nothing */}
-                {/* <Button variant="outline" className="rounded-full w-12 h-12 p-0 flex items-center justify-center" disabled>
-                  <Play className="h-5 w-5" />
-                </Button> */}
-              </div>
-            )}
-          </div>
-        </CardFooter>
-      </Card>
+      {/* Code Editor Component - Renders always but slides into view */}
+      <CodeEditor
+        isVisible={isCodeEditorVisible}
+        onClose={() => setIsCodeEditorVisible(false)}
+        onCodeSubmit={handleCodeSubmit}
+      />
     </div>
   );
 }
