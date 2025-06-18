@@ -18,7 +18,7 @@ import {
   analyzeResume,
   transcribeAudio,
   getAIResponseStream,
-  // submitCode, // We will add this later if needed
+  submitCode, // We will add this later if needed
 } from "@/services/api";
 import CodeEditor from "@/components/CodeEditor"; // Import the CodeEditor component
 
@@ -43,10 +43,10 @@ export default function AIInterviewer() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const [resumeName, setResumeName] = useState("");
+  const [setResumeName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const scrollAreaRef = useRef<HTMLDivElement | null>(null); // Explicitly type the ref
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   // State to potentially store resume data after analysis, if needed for subsequent AI calls
   // const [resumeData] = useState<ResumeAnalysisResponse | null>(null);
@@ -247,7 +247,6 @@ export default function AIInterviewer() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; // Use optional chaining
     if (file) {
-      setResumeName(file.name);
       setResumeUploaded(true);
       const newSessionID = crypto.randomUUID();
       setSessionId(newSessionID);
@@ -280,7 +279,6 @@ export default function AIInterviewer() {
           },
         ]);
         setResumeUploaded(false); // Reset upload state on error
-        setResumeName("");
       }
     }
   };
@@ -290,18 +288,74 @@ export default function AIInterviewer() {
   };
 
   // Handle code submission from the CodeEditor
-  const handleCodeSubmit = (code: string) => {
+  const handleCodeSubmit = async (code: string) => {
     console.log("Code submitted:", code);
-    // For now, just add it to the messages.
-    // You would integrate with your backend API here later.
+
+    if (!sessionId) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "Error: Cannot submit code without an active interview session.",
+        },
+      ]);
+      setIsCodeEditorVisible(false);
+      return;
+    }
+
+    setIsProcessing(true);
+
     setMessages((prev) => [
       ...prev,
       {
         role: "user",
-        content: `Submitted C++ Code:\n\`\`\`cpp\n${code}\n\`\`\``,
+        content: "Code Submitted !",
       },
     ]);
-    setIsCodeEditorVisible(false); // Close the editor after submission
+    setIsCodeEditorVisible(false);
+    const problemSlug = "best-time-to-buy-and-sell-stock";
+    const questionId = "121";
+
+    const submissionResult = await submitCode(
+      code,
+      problemSlug,
+      questionId,
+      sessionId,
+    );
+    if (submissionResult.success) {
+      if (submissionResult.run_success === "Accepted") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `All tests passed !`,
+          },
+        ]);
+      } else {
+        let failureMessage = `${submissionResult.run_success || "Unknown Status"}`;
+
+        if (submissionResult.failed_testcase) {
+          failureMessage += `\nFailed on Test Case: ${submissionResult.failed_testcase}`;
+        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: failureMessage,
+          },
+        ]);
+      }
+    } else {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Code submission failed: ${submissionResult.error || "Unknown error from backend"}`,
+        },
+      ]);
+    }
+    setIsProcessing(false);
   };
 
   return (

@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 from langchain_community.document_loaders import PyPDFLoader
 import os
 from llm_response import compiled_graph
+from submission_detail import get_submission_detail
 from deepgram_test import transcription_service_deepgram
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
@@ -145,6 +146,29 @@ def get_llm_response_stream():
         }
     )
 
+@app.route('/submit_code', methods=['POST'])
+def submit_code_endpoint():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No JSON data provided"}), 400
+
+        code = data.get('code')
+        problem_slug = data.get('problem_slug',"best-time-to-buy-and-sell-stock")
+        question_id = data.get('question_id',"121")
+
+        if not code or not problem_slug or not question_id:
+             return jsonify({"success": False, "error": "Missing required fields (code, problem_slug, or question_id)"}), 400
+
+        # Call the submit_code_to_leetcode function
+        submission_result = get_submission_detail(code, problem_slug, question_id)
+
+        # Return the result from the submission function
+        return jsonify(submission_result), 200
+
+    except Exception as e:
+        print(f"Error in submit_code endpoint: {e}")
+        return jsonify({"success": False, "error": f"Server error processing submission: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

@@ -160,3 +160,50 @@ export const getAIResponseStream = async (
     throw error;
   }
 };
+
+// Update the interface for the response from submission_detail
+interface SubmissionResponse {
+  success: boolean;
+  run_success?: string; // Whether the code passed tests
+  failed_testcase?: string;
+  // details?: any; // Full response from LeetCode
+  error?: string;
+}
+
+// Update the submitCode function
+export const submitCode = async (
+  code: string,
+  problemSlug: string = "best-time-to-buy-and-sell-stock", // Default for testing
+  questionId: string = "121", // Default for testing
+  sessionId: string,
+): Promise<SubmissionResponse> => {
+  try {
+    const response = await fetch(`${API_URL}/submit_code`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: code,
+        problem_slug: problemSlug,
+        question_id: questionId,
+        session_id: sessionId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`Server responded with ${response.status}: ${errorBody}`);
+      throw new Error(`Server responded with ${response.status}: ${errorBody}`);
+    }
+
+    const data: SubmissionResponse = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error submitting code:", error);
+    return {
+      success: false,
+      error: `Failed to submit code: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+};
