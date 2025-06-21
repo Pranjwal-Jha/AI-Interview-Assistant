@@ -9,9 +9,9 @@ class Question(BaseModel):
     name:str=Field(...,description="Name of a LeetCode question in lowercase joined with '-'")
     id:str=Field(...,description="question ID of the LeetCode question")
 llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash")
-
+# make another attribute inside the class that is "question" which is output user will see when this node is ran, the gemini_response node will just choose and send the topic, rest of work will be handled by leetcode
 @tool
-def leetcode(question:str)->dict:
+def leetcode(topic:str)->dict:
     """get a leetcode question and it's corresponding id by sending a topic of your choice"""
     parser=PydanticOutputParser(pydantic_object=Question)
     template = ChatPromptTemplate.from_messages([
@@ -23,7 +23,7 @@ def leetcode(question:str)->dict:
     }}"""),
     ])
     try:
-        prompt=template.format(topic=question)
+        prompt=template.format(topic=topic)
         response=llm.invoke(prompt)
         response_string=cast(str,response.content)
         output=parser.parse(response_string)
