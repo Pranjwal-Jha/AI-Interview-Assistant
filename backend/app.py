@@ -6,7 +6,7 @@ from langchain_community.document_loaders import PyPDFLoader
 import os
 from llm_response import compiled_graph
 from submission_detail import get_submission_detail
-from deepgram_test import transcription_service_deepgram
+from stt import transcription_service_deepgram
 app = Flask(__name__)
 CORS(app) # Enable CORS for all origins
 

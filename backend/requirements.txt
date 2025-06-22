@@ -8,3 +8,4 @@ deepgram-sdk
 gunicorn
 langgraph-checkpoint-sqlite
 pypdf
+pydantic

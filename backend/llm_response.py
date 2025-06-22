@@ -1,11 +1,11 @@
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
-from ask_question import leetcode
+from fetch_question import leetcode
 from parse_pdf import greet_candidate
 from shared import InterviewChat
 from gemini_llm import llm
@@ -17,7 +17,7 @@ def get_gemini_response(state:InterviewChat):
     messages=state["messages"]
     resume_text=state["resume"]
     interview_prompt=ChatPromptTemplate.from_messages([
-        ("system","""You are an AI interviewer currently conducting an interview with the candidate. Briefly acknowledge the candidate’s previous answers or progress so far, mentioning specifics when possible. Then, ask a follow-up or next question that logically continues the conversation based on the candidate’s responses or resume. If a user asks for leetcode question you use the tools to ask him a leetcode question about a topic of your choice
+        ("system","""You are an AI interviewer currently conducting an interview with the candidate. Briefly acknowledge the candidate’s previous answers or progress so far, mentioning specifics when possible. Then, ask a follow-up or next question that logically continues the conversation based on the candidate’s responses or resume. If a user asks for leetcode or any type of coding question you must use the tools to pass a topic of your choice. (dynamic programming, greedy etc.)
         Example:
         'Thanks for your explanation on the last question about system design. You mentioned experience with microservices in your resume — can you elaborate on how you handled data consistency across those services?'
         Keep the tone professional but conversational, and stay focused on assessing the candidate’s skills and experience
@@ -43,11 +43,27 @@ def should_continue(state:InterviewChat):
     else:
         return END
 
+def route_message(state: InterviewChat):
+    messages = state["messages"]
+    # Check if this is the first user message (resume upload)
+    if len(messages) == 1 and "resume" in messages[0].content.lower():
+        return "greet_candidate"
+    else:
+        return "get_gemini_response"
+
 graph=StateGraph(InterviewChat)
 graph.add_node("greet_candidate",greet_candidate)
 graph.add_node("get_gemini_response",get_gemini_response)
 graph.add_node("tools",tool_node)
-graph.add_edge(START,"greet_candidate")
+graph.add_conditional_edges(
+    START,
+    route_message,
+    {
+        "greet_candidate":"greet_candidate",
+        "get_gemini_response":"get_gemini_response"
+    }
+)
+# graph.add_edge(START,"greet_candidate")
 graph.add_edge("greet_candidate",END)
 graph.add_conditional_edges(
     "get_gemini_response",

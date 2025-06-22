@@ -6,18 +6,21 @@ from langchain_core.tools import tool
 from typing import cast
 
 class Question(BaseModel):
+    description:str=Field(...,description="Question statement")
     name:str=Field(...,description="Name of a LeetCode question in lowercase joined with '-'")
     id:str=Field(...,description="question ID of the LeetCode question")
 llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash")
-# make another attribute inside the class that is "question" which is output user will see when this node is ran, the gemini_response node will just choose and send the topic, rest of work will be handled by leetcode
+
 @tool
 def leetcode(topic:str)->dict:
-    """get a leetcode question and it's corresponding id by sending a topic of your choice"""
+    """get a leetcode question statement and it's corresponding id by sending a topic of your choice"""
+    print(f"topic {topic}")
     parser=PydanticOutputParser(pydantic_object=Question)
     template = ChatPromptTemplate.from_messages([
         ("system", """You are a helpful AI that gives a single LeetCode question on the topic {topic}.
     Respond ONLY with JSON in the following format:
     {{
+    "description":"<question statement>"
     "name": "<question-name-in-lowercase-with-hyphens>",
     "id": "<leetcode-question-id>"
     }}"""),
@@ -28,12 +31,12 @@ def leetcode(topic:str)->dict:
         response_string=cast(str,response.content)
         output=parser.parse(response_string)
         print(output)
-        return {"question":output.name,"id":output.id}
+        return {"description":output.description,"question":output.name,"id":output.id}
     except Exception as e:
         print(e)
         return {}
 
-leetcode.invoke("dp")
+# leetcode.invoke("dp")
 # leetcode("dp")
 
 # while True:
