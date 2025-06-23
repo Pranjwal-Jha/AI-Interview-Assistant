@@ -19,7 +19,7 @@ def greet_candidate(state:InterviewChat):
     response=llm.invoke(greeting_prompt.invoke({
         "messages":messages,
         "resume_context":resume_text
-    })#,{"configurable":{"thread_id":"thread_1"}},
+    })
     )
     return{
         "messages":[response]
