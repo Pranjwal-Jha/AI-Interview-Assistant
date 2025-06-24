@@ -18,7 +18,7 @@ def leetcode(topic:str)->dict:
     parser=PydanticOutputParser(pydantic_object=Question)
     template = ChatPromptTemplate.from_messages([
         ("system", """You are a helpful AI that gives a single LeetCode question on the topic {topic}.
-    Respond ONLY with JSON in the following format:
+    Respond ONLY in the following format:
     {{
     "description":"<question statement>"
     "name": "<question-name-in-lowercase-with-hyphens>",
