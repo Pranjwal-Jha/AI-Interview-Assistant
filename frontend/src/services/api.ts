@@ -173,8 +173,8 @@ interface SubmissionResponse {
 // Update the submitCode function
 export const submitCode = async (
   code: string,
-  problemSlug: string = "best-time-to-buy-and-sell-stock", // Default for testing
-  questionId: string = "121", // Default for testing
+  // problemSlug: string = "best-time-to-buy-and-sell-stock", // Default for testing
+  // questionId: string = "121", // Default for testing
   sessionId: string,
 ): Promise<SubmissionResponse> => {
   try {
@@ -185,8 +185,8 @@ export const submitCode = async (
       },
       body: JSON.stringify({
         code: code,
-        problem_slug: problemSlug,
-        question_id: questionId,
+        // problem_slug: problemSlug,
+        // question_id: questionId,
         session_id: sessionId,
       }),
     });

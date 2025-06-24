@@ -154,16 +154,21 @@ def submit_code_endpoint():
             return jsonify({"success": False, "error": "No JSON data provided"}), 400
 
         code = data.get('code')
-        problem_slug = data.get('problem_slug',"best-time-to-buy-and-sell-stock")
-        question_id = data.get('question_id',"121")
-
-        if not code or not problem_slug or not question_id:
+        session_id=data.get('session_id')
+        if not code or not session_id:
+            return  jsonify({"success": False, "error": "Missing required fields (code or session_id)"}),400
+        current_state = compiled_graph.get_state({"configurable": {"thread_id": session_id}})
+        if current_state and current_state.values:
+            problem_slug=current_state.values.get('current_question_name')
+            question_id=current_state.values.get('current_question_id')
+        else:
+            problem_slug = 'best-time-to-buy-and-sell-stock'
+            question_id = '121'
+        if not problem_slug or not question_id:
              return jsonify({"success": False, "error": "Missing required fields (code, problem_slug, or question_id)"}), 400
 
-        # Call the submit_code_to_leetcode function
         submission_result = get_submission_detail(code, problem_slug, question_id)
 
-        # Return the result from the submission function
         return jsonify(submission_result), 200
 
     except Exception as e:

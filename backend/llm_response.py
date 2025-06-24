@@ -51,10 +51,33 @@ def route_message(state: InterviewChat):
     else:
         return "get_gemini_response"
 
+def custom_tool_node(state:InterviewChat):
+    message=state["messages"]
+    last_message=message[-1]
+    if isinstance(last_message,AIMessage) and last_message.tool_calls:
+        tool_call=last_message.tool_calls[0]
+        if tool_call["name"]=="leetcode":
+            topic=tool_call["args"]["topic"]
+            result=leetcode.invoke(topic)
+
+            updated_state={
+                "current_question_name":result.get("question"),
+                "current_question_id":result.get("id")
+            }
+            tool_message={
+                "role":"assistant",
+                "content": f"Here's a coding question for you:\n\n{result.get('description', 'No description available')}"
+            }
+            return{
+                "messages":[AIMessage(content=tool_message["content"])],
+                **updated_state
+            }
+    return {"messages":[]}
+
 graph=StateGraph(InterviewChat)
 graph.add_node("greet_candidate",greet_candidate)
 graph.add_node("get_gemini_response",get_gemini_response)
-graph.add_node("tools",tool_node)
+graph.add_node("tools",custom_tool_node)
 graph.add_conditional_edges(
     START,
     route_message,

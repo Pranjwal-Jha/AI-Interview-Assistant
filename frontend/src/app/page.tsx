@@ -314,15 +314,8 @@ export default function AIInterviewer() {
       },
     ]);
     setIsCodeEditorVisible(false);
-    const problemSlug = "best-time-to-buy-and-sell-stock";
-    const questionId = "121";
 
-    const submissionResult = await submitCode(
-      code,
-      problemSlug,
-      questionId,
-      sessionId,
-    );
+    const submissionResult = await submitCode(code, sessionId);
     if (submissionResult.success) {
       if (submissionResult.run_success === "Accepted") {
         setMessages((prev) => [

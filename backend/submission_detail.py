@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from submit_question import get_submission_id
 load_dotenv()
 
-def get_submission_detail(typed_code:str,problem_slug:str="best-time-to-buy-and-sell-stock",question_id:str="121"):
+def get_submission_detail(typed_code:str,problem_slug:str,question_id:str):
     csrf_token = os.environ.get("LEETCODE_CSRF")
     session = os.environ.get("LEETCODE_SESSION")
     # print(csrf_token, "----" , session)
