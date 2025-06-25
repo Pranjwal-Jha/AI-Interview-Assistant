@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify, Response
 import json
 from flask_cors import CORS
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage,AIMessage
 from langchain_community.document_loaders import PyPDFLoader
 import os
+
+from langchain_core.messages.ai import AIMessage
 from llm_response import compiled_graph
 from submission_detail import get_submission_detail
 from stt import transcription_service_deepgram
@@ -124,8 +126,9 @@ def get_llm_response_stream():
             stream_mode="messages",
             config={"configurable": {"thread_id": session_id}}
             ):
-                if message_chunk.content:
+                if isinstance(message_chunk,AIMessage) and message_chunk.content:
                     # Send each chunk as Server-Sent Events (SSE)
+                    print(f"MSGCHUNK {message_chunk.content}")
                     yield f"data: {json.dumps({'content': message_chunk.content, 'type': 'chunk'})}\n\n"
 
             # Send end signal

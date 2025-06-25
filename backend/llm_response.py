@@ -1,4 +1,4 @@
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage,ToolMessage
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode
@@ -26,6 +26,7 @@ def get_gemini_response(state:InterviewChat):
         ---END RESUME---"""),
         MessagesPlaceholder(variable_name="messages")
     ])
+    print("INSIDE GEMINI")
     response=llm.invoke(interview_prompt.invoke({
         "resume_context":resume_text,
         "messages":messages
@@ -64,12 +65,10 @@ def custom_tool_node(state:InterviewChat):
                 "current_question_name":result.get("question"),
                 "current_question_id":result.get("id")
             }
-            tool_message={
-                "role":"assistant",
-                "content": f"Here's a coding question for you:\n\n{result.get('description', 'No description available')}"
-            }
+            ai_message_content = f"Here's a coding question for you:\n\n{result.get('description', 'No description available')}"
+            print(f"AIMC {ai_message_content}")
             return{
-                "messages":[AIMessage(content=tool_message["content"])],
+                "messages":[AIMessage(content=ai_message_content)],
                 **updated_state
             }
     return {"messages":[]}
@@ -77,7 +76,6 @@ def custom_tool_node(state:InterviewChat):
 graph=StateGraph(InterviewChat)
 graph.add_node("greet_candidate",greet_candidate)
 graph.add_node("get_gemini_response",get_gemini_response)
-graph.add_node("tools",custom_tool_node)
 graph.add_conditional_edges(
     START,
     route_message,
@@ -96,4 +94,5 @@ graph.add_conditional_edges(
         END:END
     }
 )
+graph.add_node("tools",custom_tool_node)
 compiled_graph=graph.compile(checkpointer=memory)

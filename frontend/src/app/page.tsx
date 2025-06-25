@@ -18,6 +18,7 @@ import {
   analyzeResume,
   transcribeAudio,
   getAIResponseStream,
+  getAIResponse,
   submitCode, // We will add this later if needed
 } from "@/services/api";
 import CodeEditor from "@/components/CodeEditor"; // Import the CodeEditor component
@@ -152,61 +153,62 @@ export default function AIInterviewer() {
             console.log("Sending transcribed text to A.I for response...");
             setIsProcessing(true);
             if (sessionId) {
-              setMessages((prev) => [
-                ...prev,
-                { role: "assistant", content: "" }, // Empty placeholder
-              ]);
-
-              let accumulatedContent = "";
-
-              try {
-                await getAIResponseStream(
-                  transcribedText,
-                  sessionId,
-                  (chunk: string) => {
-                    // This callback is called for each chunk
-                    accumulatedContent += chunk;
-
-                    // Update the last assistant message with accumulated content
-                    setMessages((prev) => {
-                      const newMessages = [...prev];
-                      const lastIndex = newMessages.length - 1;
-                      if (newMessages[lastIndex]?.role === "assistant") {
-                        newMessages[lastIndex] = {
-                          ...newMessages[lastIndex],
-                          content: accumulatedContent,
-                        };
-                      }
-                      return newMessages;
-                    });
-                  },
-                  null,
-                );
-              } catch (error) {
-                console.error("Error during streaming:", error);
-                // Replace the placeholder with error message
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const lastIndex = newMessages.length - 1;
-                  if (newMessages[lastIndex]?.role === "assistant") {
-                    newMessages[lastIndex] = {
-                      ...newMessages[lastIndex],
-                      content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-                    };
-                  }
-                  return newMessages;
-                });
-              }
-              //If want to revert back to normal non streaming text inputs
-              // const aiResponseContent = await getAIResponse(
-              //   transcribedText,
-              //   sessionId,
-              //   null,
-              // );
+              //UNCOMMENT FOR STREAMING
               // setMessages((prev) => [
               //   ...prev,
-              //   { role: "assistant", content: aiResponseContent },
+              //   { role: "assistant", content: "" }, // Empty placeholder
               // ]);
+
+              // let accumulatedContent = "";
+
+              // try {
+              //   await getAIResponseStream(
+              //     transcribedText,
+              //     sessionId,
+              //     (chunk: string) => {
+              //       // This callback is called for each chunk
+              //       accumulatedContent += chunk;
+
+              //       // Update the last assistant message with accumulated content
+              //       setMessages((prev) => {
+              //         const newMessages = [...prev];
+              //         const lastIndex = newMessages.length - 1;
+              //         if (newMessages[lastIndex]?.role === "assistant") {
+              //           newMessages[lastIndex] = {
+              //             ...newMessages[lastIndex],
+              //             content: accumulatedContent,
+              //           };
+              //         }
+              //         return newMessages;
+              //       });
+              //     },
+              //     null,
+              //   );
+              // } catch (error) {
+              //   console.error("Error during streaming:", error);
+              //   // Replace the placeholder with error message
+              //   setMessages((prev) => {
+              //     const newMessages = [...prev];
+              //     const lastIndex = newMessages.length - 1;
+              //     if (newMessages[lastIndex]?.role === "assistant") {
+              //       newMessages[lastIndex] = {
+              //         ...newMessages[lastIndex],
+              //         content: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+              //       };
+              //     }
+              //     return newMessages;
+              //   });
+              // }
+              //If want to revert back to normal non streaming text inputs
+              const aiResponseContent = await getAIResponse(
+                transcribedText,
+                sessionId,
+                null,
+              );
+              setMessages((prev) => [
+                ...prev,
+                { role: "assistant", content: aiResponseContent },
+              ]);
             } else {
               console.log("Session ID not available");
               setMessages((prev) => [

@@ -14,7 +14,7 @@ llm=ChatGoogleGenerativeAI(model="gemini-2.0-flash")
 @tool
 def leetcode(topic:str)->dict:
     """get a leetcode question statement and it's corresponding id by sending a topic of your choice"""
-    print(f"topic {topic}")
+    # print(f"topic {topic}")
     parser=PydanticOutputParser(pydantic_object=Question)
     template = ChatPromptTemplate.from_messages([
         ("system", """You are a helpful AI that gives a single LeetCode question on the topic {topic}.
@@ -30,7 +30,7 @@ def leetcode(topic:str)->dict:
         response=llm.invoke(prompt)
         response_string=cast(str,response.content)
         output=parser.parse(response_string)
-        print(output)
+        # print(output)
         return {"description":output.description,"question":output.name,"id":output.id}
     except Exception as e:
         print(e)
