@@ -20,3 +20,4 @@ backend/test_template.json
 backend/text_preprocess.py
 backend/gemini_pdf_test.py
 backend/env
+git_script.shm

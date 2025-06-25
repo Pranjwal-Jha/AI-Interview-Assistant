@@ -21,10 +21,8 @@ export default function CodeEditor({
   const language = "cpp"; // Hardcode language to C++
 
   const [copied, setCopied] = useState(false);
-  // New state for submit feedback
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Set default code when editor becomes visible
   useEffect(() => {
     if (isVisible) {
       setCode(getDefaultCode());
