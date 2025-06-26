@@ -1,6 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
-from shared import InterviewChat
-from gemini_llm import llm
+from common_types import InterviewChat
+from llm_config import llm
 RESUME_PATH="resume.pdf"
 
 # loader=PyPDFLoader(RESUME_PATH)

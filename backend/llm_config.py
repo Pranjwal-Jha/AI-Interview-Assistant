@@ -1,6 +1,6 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
-from fetch_question import leetcode
+from leetcode_tool import leetcode
 gemini_api_key=os.environ.get("GEMINI_API_KEY")
 if not gemini_api_key:
     print("Error GEMINI API KEY missing")
