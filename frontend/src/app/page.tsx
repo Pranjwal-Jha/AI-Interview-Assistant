@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   analyzeResume,
   transcribeAudio,
-  getAIResponseStream,
+  // getAIResponseStream,
   getAIResponse,
   submitCode, // We will add this later if needed
 } from "@/services/api";
@@ -44,7 +44,7 @@ export default function AIInterviewer() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const [setResumeName] = useState("");
+  // const [setResumeName] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
